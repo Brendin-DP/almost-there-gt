@@ -8,9 +8,11 @@ export type Admin = {
 export type Creator = {
   id: string;
   name: string;
+  /** Public channel display name (e.g. YouTube channel title). */
+  channel_name: string;
   youtube_channel_id: string;
-  profile_image_url: string;
-  youtube_url: string;
+  profile_image_url: string | null;
+  youtube_url: string | null;
   twitch_url: string | null;
   twitter_url: string | null;
   is_active: boolean;
