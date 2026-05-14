@@ -37,7 +37,7 @@ export function DeleteCreatorDialog({ creatorId, creatorName }: Props) {
             <DialogTitle>Delete creator</DialogTitle>
             <DialogDescription>
               This removes <strong>{creatorName}</strong> and any snapshots and
-              milestones for them from the mock database. This cannot be undone.
+              milestones for them from Supabase. This cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <form action={deleteCreatorAction}>

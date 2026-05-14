@@ -8,7 +8,7 @@ import {
   setAdminSessionCookie,
   signAdminSession,
 } from "@/lib/auth/session";
-import { readMockDb } from "@/lib/db/mock-db";
+import { getAdminByEmail } from "@/lib/services/admins";
 
 export type LoginState = {
   error: string | null;
@@ -29,10 +29,7 @@ export async function loginAction(
     return { error: "Enter your email and password." };
   }
 
-  const db = await readMockDb();
-  const admin = db.admins.find(
-    (a) => a.email.toLowerCase() === email.toLowerCase()
-  );
+  const admin = await getAdminByEmail(email);
 
   if (!admin) {
     return { error: "Invalid email or password." };

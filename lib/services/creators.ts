@@ -40,7 +40,7 @@ function optionalUrlOrNull(
 }
 
 /**
- * Map a Supabase `creators` row (or legacy mock shape) into our `Creator` type.
+ * Map a Supabase `creators` row into our `Creator` type.
  */
 export function normalizeCreator(record: unknown): Creator {
   const c = record as Partial<Creator> & { id?: string };

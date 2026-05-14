@@ -35,10 +35,3 @@ export type Milestone = {
   achieved_at: string | null;
   created_at: string;
 };
-
-export type MockDb = {
-  admins: Admin[];
-  creators: Creator[];
-  snapshots: Snapshot[];
-  milestones: Milestone[];
-};
