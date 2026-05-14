@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { CreatorPublicCard } from "@/components/creator-public-card";
+import { PublicDashboardViews } from "@/components/public-dashboard-views";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -72,11 +72,7 @@ export default async function HomePage() {
               </CardHeader>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {creators.map((c) => (
-                <CreatorPublicCard key={c.creator_id} creator={c} />
-              ))}
-            </div>
+            <PublicDashboardViews creators={creators} />
           )}
         </div>
       </main>

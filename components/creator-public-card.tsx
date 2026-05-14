@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 import {
@@ -16,7 +18,7 @@ function formatCount(n: number): string {
   );
 }
 
-function TrendLine({ creator }: { creator: PublicDashboardCreator }) {
+export function TrendLine({ creator }: { creator: PublicDashboardCreator }) {
   const { direction, delta } = creator;
 
   if (direction === "unknown" || delta == null) {
