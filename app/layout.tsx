@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Almost There",
-  description: "Next.js application scaffold",
+  description:
+    "GT7 creator stats and milestone predictions — fan-first community platform.",
 };
 
 export default function RootLayout({
