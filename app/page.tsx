@@ -1,24 +1,85 @@
-import { redirect } from "next/navigation";
+import Link from "next/link";
 
+import { CreatorPublicCard } from "@/components/creator-public-card";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { getAdminSessionFromCookies } from "@/lib/auth/session";
-import { LoginForm } from "@/components/login-form";
+import { listPublicDashboardCreators } from "@/lib/services/public-dashboard";
 
 export default async function HomePage() {
   const session = await getAdminSessionFromCookies();
-  if (session) {
-    redirect("/admin/dashboard");
+
+  let creators: Awaited<ReturnType<typeof listPublicDashboardCreators>> = [];
+  let loadError: string | null = null;
+  try {
+    creators = await listPublicDashboardCreators();
+  } catch (e) {
+    loadError =
+      e instanceof Error ? e.message : "Could not load the public dashboard.";
   }
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-8 p-6">
-      <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Almost There</h1>
-        <p className="text-muted-foreground max-w-md text-sm">
-          Admin sign-in. Public dashboard and predictor will live on separate
-          routes later.
-        </p>
-      </div>
-      <LoginForm />
+    <div className="bg-background flex min-h-svh flex-col">
+      <header className="border-border flex flex-wrap items-center justify-between gap-3 border-b px-4 py-4 md:px-6">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">
+            Almost There
+          </h1>
+          <p className="text-muted-foreground mt-0.5 text-sm">
+            GT7 creators — live subscriber counts
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {session ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/admin/dashboard">Admin</Link>
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/login">Admin sign in</Link>
+            </Button>
+          )}
+        </div>
+      </header>
+
+      <main className="flex-1 px-4 py-8 md:px-6">
+        <div className="mx-auto max-w-6xl space-y-8">
+          {loadError ? (
+            <Card className="border-destructive/50">
+              <CardHeader>
+                <CardTitle className="text-destructive">
+                  Couldn&apos;t load creators
+                </CardTitle>
+                <CardDescription className="text-destructive/90 whitespace-pre-wrap">
+                  {loadError}
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ) : creators.length === 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>No creators yet</CardTitle>
+                <CardDescription>
+                  When active creators exist in Supabase, they&apos;ll show here
+                  with their latest snapshot. Run a snapshot sync from admin to
+                  populate subscriber counts.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {creators.map((c) => (
+                <CreatorPublicCard key={c.creator_id} creator={c} />
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
     </div>
   );
 }

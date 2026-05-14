@@ -12,14 +12,14 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/admin")) {
     const token = request.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value;
     if (!token) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(new URL("/login", request.url));
     }
 
     const secret = getSessionSecretKey();
     try {
       await jwtVerify(token, secret, { algorithms: ["HS256"] });
     } catch {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(new URL("/login", request.url));
     }
   }
 
