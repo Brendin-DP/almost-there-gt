@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getAdminSessionFromCookies } from "@/lib/auth/session";
 import { createServiceRoleClient } from "@/lib/supabase/service";
-import { buildChannelsStatsUrlForLog, getSubscriberCount } from "@/lib/youtube";
+import { buildChannelsSnippetStatsUrlForLog, getChannelDetails } from "@/lib/youtube";
 
 /** Creators list and snapshot writes use the service role client (bypasses RLS). */
 
@@ -122,7 +122,7 @@ export async function POST() {
     const channelId = String(c.youtube_channel_id).trim();
     const debugLabel = `${creatorId}${name ? ` (${name})` : ""}`;
 
-    const maskedUrl = buildChannelsStatsUrlForLog(channelId, youtubeKey);
+    const maskedUrl = buildChannelsSnippetStatsUrlForLog(channelId, youtubeKey);
     console.log(`${LOG_PREFIX} YouTube API URL (masked key, last 4 visible)`, {
       creatorId,
       name,
@@ -130,9 +130,9 @@ export async function POST() {
       url: maskedUrl,
     });
 
-    const count = await getSubscriberCount(channelId, debugLabel);
-    if (count === null) {
-      console.warn(`${LOG_PREFIX} YouTube returned no subscriber count`, {
+    const details = await getChannelDetails(channelId, debugLabel);
+    if (details === null) {
+      console.warn(`${LOG_PREFIX} YouTube returned no channel details`, {
         creatorId,
         name,
         channelId,
@@ -140,9 +140,30 @@ export async function POST() {
       failures.push({
         creatorId,
         name,
-        reason: "Could not read subscriber count from YouTube.",
+        reason: "Could not read channel details from YouTube.",
       });
       continue;
+    }
+
+    const count = details.subscriberCount;
+
+    if (details.profileImageUrl) {
+      const { error: avatarError } = await supabaseService
+        .from("creators")
+        .update({ profile_image_url: details.profileImageUrl })
+        .eq("id", creatorId);
+
+      if (avatarError) {
+        logSupabaseError(
+          `creator profile_image_url update failed creator=${creatorId}`,
+          avatarError
+        );
+      } else {
+        console.log(`${LOG_PREFIX} profile_image_url updated`, {
+          creatorId,
+          name,
+        });
+      }
     }
 
     console.log(`${LOG_PREFIX} inserting snapshot`, {

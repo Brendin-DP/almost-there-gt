@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { CreatorProfileImage } from "@/components/creator-profile-image";
 import type { PublicDashboardCreator } from "@/lib/services/public-dashboard";
 import { cn } from "@/lib/utils";
 
@@ -69,8 +70,7 @@ export function CreatorPublicCard({ creator }: { creator: PublicDashboardCreator
         <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-4">
           <div className="bg-muted text-muted-foreground relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-semibold">
             {creator.profile_image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <CreatorProfileImage
                 src={creator.profile_image_url}
                 alt=""
                 className="size-full object-cover"

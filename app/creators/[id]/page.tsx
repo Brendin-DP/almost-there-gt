@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { CreatorProfileImage } from "@/components/creator-profile-image";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,8 +31,7 @@ export default async function PublicCreatorPage({ params }: PageProps) {
           <CardHeader className="flex flex-row items-start gap-4 space-y-0">
             <div className="bg-muted text-muted-foreground flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full text-lg font-semibold">
               {creator.profile_image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <CreatorProfileImage
                   src={creator.profile_image_url}
                   alt=""
                   className="size-full object-cover"

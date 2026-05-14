@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import { normalizeHttpsUrl } from "@/lib/utils";
 
 export type PublicDashboardRow = {
   creator_id: string;
@@ -162,11 +163,14 @@ export async function listPublicDashboardCreators(): Promise<
   const rows: PublicDashboardRow[] = creators.map((c) => {
     const id = typeof c.id === "string" ? c.id : "";
     const name = typeof c.name === "string" ? c.name : "";
-    const profile_image_url =
+    const profileRaw =
       typeof c.profile_image_url === "string" &&
       c.profile_image_url.trim() !== ""
         ? c.profile_image_url.trim()
         : null;
+    const profile_image_url = profileRaw
+      ? normalizeHttpsUrl(profileRaw)
+      : null;
 
     const snaps = byCreator.get(id) ?? [];
     const latest = snaps[0] ?? null;
@@ -228,11 +232,14 @@ export async function getPublicCreatorById(
     typeof data.channel_name === "string" && data.channel_name.trim() !== ""
       ? data.channel_name.trim()
       : name;
-  const profile_image_url =
+  const profileRaw =
     typeof data.profile_image_url === "string" &&
     data.profile_image_url.trim() !== ""
       ? data.profile_image_url.trim()
       : null;
+  const profile_image_url = profileRaw
+    ? normalizeHttpsUrl(profileRaw)
+    : null;
   const youtube_channel_id =
     typeof data.youtube_channel_id === "string" ? data.youtube_channel_id : "";
 

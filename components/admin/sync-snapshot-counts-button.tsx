@@ -1,12 +1,27 @@
 "use client";
 
+import type { VariantProps } from "class-variance-authority";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import type { SyncSummary } from "@/app/api/snapshots/sync/route";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 
-export function SyncSnapshotCountsButton() {
+type ButtonVariant = VariantProps<typeof buttonVariants>["variant"];
+
+type Props = {
+  variant?: ButtonVariant;
+  label?: string;
+  loadingLabel?: string;
+};
+
+export function SyncSnapshotCountsButton({
+  variant = "default",
+  label = "Sync Counts",
+  loadingLabel = "Syncing…",
+}: Props) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   async function handleClick() {
@@ -53,6 +68,7 @@ export function SyncSnapshotCountsButton() {
         toast.success(
           `Synced ${summary.succeeded} of ${summary.attempted} creator(s).`
         );
+        router.refresh();
         return;
       }
 
@@ -66,6 +82,7 @@ export function SyncSnapshotCountsButton() {
       if (preview) {
         toast.message("Failures", { description: preview });
       }
+      router.refresh();
     } catch (e) {
       toast.error(
         e instanceof Error ? e.message : "Sync request failed unexpectedly."
@@ -76,8 +93,8 @@ export function SyncSnapshotCountsButton() {
   }
 
   return (
-    <Button type="button" disabled={loading} onClick={handleClick}>
-      {loading ? "Syncing…" : "Sync Counts"}
+    <Button type="button" variant={variant} disabled={loading} onClick={handleClick}>
+      {loading ? loadingLabel : label}
     </Button>
   );
 }

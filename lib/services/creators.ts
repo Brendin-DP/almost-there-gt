@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Creator } from "@/lib/db/types";
 import { createServiceRoleClient } from "@/lib/supabase/service";
+import { normalizeHttpsUrl } from "@/lib/utils";
 
 export type CreatorWriteInput = {
   name: string;
@@ -51,10 +52,11 @@ export function normalizeCreator(record: unknown): Creator {
   const channel_name = channelNameRaw || name;
   const youtube_channel_id =
     typeof c.youtube_channel_id === "string" ? c.youtube_channel_id : "";
-  const profile =
+  const profileRaw =
     typeof c.profile_image_url === "string" && c.profile_image_url.trim() !== ""
       ? c.profile_image_url.trim()
       : null;
+  const profile = profileRaw ? normalizeHttpsUrl(profileRaw) : null;
   const youtube =
     typeof c.youtube_url === "string" && c.youtube_url.trim() !== ""
       ? c.youtube_url.trim()
