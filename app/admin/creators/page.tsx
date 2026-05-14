@@ -21,8 +21,7 @@ export default async function AdminCreatorsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Creators</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Manage tracked GT7 creators (stored in{" "}
-            <code className="text-foreground">data/mock-db.json</code>).
+            Manage tracked GT7 creators (stored in Supabase).
           </p>
         </div>
         <Button asChild>

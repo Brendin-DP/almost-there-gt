@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { Creator } from "@/lib/db/types";
-import { readMockDb, writeMockDb } from "@/lib/db/mock-db";
+import { createServiceRoleClient } from "@/lib/supabase/service";
 
 export type CreatorWriteInput = {
   name: string;
@@ -39,7 +39,9 @@ function optionalUrlOrNull(
   return { ok: true, value: t };
 }
 
-/** Normalize rows from disk (handles legacy records before `channel_name` / nullable URLs). */
+/**
+ * Map a Supabase `creators` row (or legacy mock shape) into our `Creator` type.
+ */
 export function normalizeCreator(record: unknown): Creator {
   const c = record as Partial<Creator> & { id?: string };
   const id = typeof c.id === "string" ? c.id : "";
@@ -66,8 +68,9 @@ export function normalizeCreator(record: unknown): Creator {
       ? c.twitter_url.trim()
       : null;
   const is_active = typeof c.is_active === "boolean" ? c.is_active : true;
+  const createdRaw = c.created_at;
   const created_at =
-    typeof c.created_at === "string" ? c.created_at : new Date().toISOString();
+    typeof createdRaw === "string" ? createdRaw : new Date().toISOString();
 
   return {
     id,
@@ -138,73 +141,110 @@ export function parseCreatorForm(
 export async function listCreators(options?: {
   includeInactive?: boolean;
 }): Promise<Creator[]> {
-  const db = await readMockDb();
-  const list = db.creators
-    .map(normalizeCreator)
-    .sort((a, b) =>
-      a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
-    );
-  if (options?.includeInactive) return list;
-  return list.filter((c) => c.is_active);
+  const supabase = createServiceRoleClient();
+  let query = supabase.from("creators").select("*").order("name", {
+    ascending: true,
+  });
+  if (!options?.includeInactive) {
+    query = query.eq("is_active", true);
+  }
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => normalizeCreator(row));
 }
 
 export async function getCreatorById(id: string): Promise<Creator | null> {
-  const db = await readMockDb();
-  const raw = db.creators.find((c) => c.id === id);
-  return raw ? normalizeCreator(raw) : null;
+  const supabase = createServiceRoleClient();
+  const { data, error } = await supabase
+    .from("creators")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? normalizeCreator(data) : null;
 }
 
 export async function createCreator(input: CreatorWriteInput): Promise<Creator> {
-  const db = await readMockDb();
-  const creator: Creator = {
-    id: crypto.randomUUID(),
-    created_at: new Date().toISOString(),
-    ...input,
+  const supabase = createServiceRoleClient();
+  const insertRow = {
+    name: input.name,
+    channel_name: input.channel_name,
+    youtube_channel_id: input.youtube_channel_id,
+    profile_image_url: input.profile_image_url,
+    youtube_url: input.youtube_url,
+    twitch_url: input.twitch_url,
+    twitter_url: input.twitter_url,
+    is_active: input.is_active,
   };
-  db.creators.push(creator);
-  await writeMockDb(db);
-  return creator;
+  const { data, error } = await supabase
+    .from("creators")
+    .insert(insertRow)
+    .select("*")
+    .single();
+  if (error) throw new Error(error.message);
+  return normalizeCreator(data);
 }
 
 export async function updateCreator(
   id: string,
   input: CreatorWriteInput
 ): Promise<Creator | null> {
-  const db = await readMockDb();
-  const idx = db.creators.findIndex((c) => c.id === id);
-  if (idx === -1) return null;
-  const prev = normalizeCreator(db.creators[idx]!);
-  const updated: Creator = {
-    ...prev,
-    ...input,
-    id: prev.id,
-    created_at: prev.created_at,
+  const supabase = createServiceRoleClient();
+  const updateRow = {
+    name: input.name,
+    channel_name: input.channel_name,
+    youtube_channel_id: input.youtube_channel_id,
+    profile_image_url: input.profile_image_url,
+    youtube_url: input.youtube_url,
+    twitch_url: input.twitch_url,
+    twitter_url: input.twitter_url,
+    is_active: input.is_active,
   };
-  db.creators[idx] = updated;
-  await writeMockDb(db);
-  return updated;
+  const { data, error } = await supabase
+    .from("creators")
+    .update(updateRow)
+    .eq("id", id)
+    .select("*")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? normalizeCreator(data) : null;
 }
 
 export async function setCreatorActive(
   id: string,
   is_active: boolean
 ): Promise<boolean> {
-  const db = await readMockDb();
-  const idx = db.creators.findIndex((c) => c.id === id);
-  if (idx === -1) return false;
-  const prev = normalizeCreator(db.creators[idx]!);
-  db.creators[idx] = { ...prev, is_active };
-  await writeMockDb(db);
-  return true;
+  const supabase = createServiceRoleClient();
+  const { data, error } = await supabase
+    .from("creators")
+    .update({ is_active })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data != null;
 }
 
 export async function deleteCreator(id: string): Promise<boolean> {
-  const db = await readMockDb();
-  const exists = db.creators.some((c) => c.id === id);
-  if (!exists) return false;
-  db.creators = db.creators.filter((c) => c.id !== id);
-  db.snapshots = db.snapshots.filter((s) => s.creator_id !== id);
-  db.milestones = db.milestones.filter((m) => m.creator_id !== id);
-  await writeMockDb(db);
-  return true;
+  const supabase = createServiceRoleClient();
+
+  const { error: snapErr } = await supabase
+    .from("snapshots")
+    .delete()
+    .eq("creator_id", id);
+  if (snapErr) throw new Error(snapErr.message);
+
+  const { error: msErr } = await supabase
+    .from("milestones")
+    .delete()
+    .eq("creator_id", id);
+  if (msErr) throw new Error(msErr.message);
+
+  const { data, error } = await supabase
+    .from("creators")
+    .delete()
+    .eq("id", id)
+    .select("id");
+  if (error) throw new Error(error.message);
+  return Array.isArray(data) && data.length > 0;
 }
